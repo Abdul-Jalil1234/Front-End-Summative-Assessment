@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learning Journey Plan — BSE Specialisation Advisor</title>
+<meta name="description" content="Find the BSE specialisation that fits how you already think and work.">
+<script>
+  // Anti-flash: apply the saved theme before CSS paints, so there's no
+  // flicker from dark → light (or vice versa) on page load.
+  (function () {
+    try {
+      var t = localStorage.getItem('ljp_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="scroll-progress"><span class="scroll-progress-fill" id="scrollProgressFill"></span></div>
+
+<!--              THIS IS PRELOADER  SECTION                         -->
+<div id="preloader">
+  <div class="preloader-compass" aria-hidden="true"></div>
+  <p class="preloader-label">Plotting your route</p>
+</div>
+
+<!-- THIS IS THE  NAVBAR SECTION -->
+<nav class="site-nav">
+  <div class="container">
+    <a href="index.html" class="brand"><span class="brand-mark" aria-hidden="true"></span>Learning Journey Plan</a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html" class="active">Start</a></li>
+      <li><a href="quiz.html">Quiz</a></li>
+      <li><a href="results.html">Results</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀</button>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+        <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!--              HEADER                    -->
+<header class="page-header">
+  <div class="container">
+    <p class="eyebrow">BSE Specialisation Advisor</p>
+    <h1>Plot your route through the BSE programme.</h1>
+    <p class="lede">Four specialisations, one profile that already leans toward one of them.
+      Answer a short, timed quiz and get a clear recommendation — Low-Level Programming,
+      AR/VR, Full-Stack Web Development, or Machine Learning — backed by a visual
+      breakdown of your results.</p>
+  </div>
+</header>
+
+
+<!--                      MAIN             -->
+<main class="container" style="padding: 40px 24px 80px;">
+  <div class="grid-2">
+
+    <!-- ---- Intake form ---- -->
+    <section class="panel bracketed reveal" aria-labelledby="form-heading">
+      <h2 id="form-heading" style="font-size:1.3rem;">Before you start</h2>
+      <p style="margin-bottom:24px;">Tell us who you are — this personalises your results page.
+        Every field validates as you type, no pop-ups.</p>
+
+      <form id="intakeForm" novalidate>
+
+        <div class="field" id="field-name">
+          <label for="fullName">Full name</label>
+          <input type="text" id="fullName" name="fullName" placeholder="e.g. Abdul-Jalil Fuseini" autocomplete="name">
+          <span class="error-message" id="err-fullName"></span>
+        </div>
+
+        <div class="field" id="field-studentId">
+          <label for="studentId">Student ID</label>
+          <input type="text" id="studentId" name="studentId" placeholder="e.g. 1276830987" class="mono">
+          <span class="error-message" id="err-studentId"></span>
+          <span class="hint">Format: ten digits (1234567890)</span>
+        </div>
+
+        <div class="field" id="field-email">
+          <label for="email">Institutional email</label>
+          <input type="email" id="email" name="email" placeholder="e.g. a.fuseini@alustudent.com" autocomplete="email">
+          <span class="error-message" id="err-email"></span>
+        </div>
+
+        <div class="field" id="field-phone">
+          <label for="phone">Phone number</label>
+          <input type="tel" id="phone" name="phone" placeholder="e.g. +230 57123456" autocomplete="tel">
+          <span class="error-message" id="err-phone"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="startBtn" style="width:100%; justify-content:center; margin-top:10px;">
+          Begin the quiz →
+        </button>
+      </form>
+    </section>
+
+    <!-- ---- The  Specialisation preview cards ---- -->
+    <section aria-labelledby="tracks-heading">
+      <h2 id="tracks-heading" style="font-size:1.3rem; margin-bottom:16px;">Four possible routes</h2>
+      <div style="display:grid; gap:14px;">
+
+        <div class="panel reveal" style="--d:1; padding:18px; border-left:3px solid var(--cat-lowlevel);">
+          <h3 style="font-size:1rem; margin-bottom:4px;">Low-Level Programming</h3>
+          <p style="margin:0; font-size:0.85rem;">Memory, performance, systems — for people who want to know exactly what the machine is doing.</p>
+        </div>
+
+        <div class="panel reveal" style="--d:2; padding:18px; border-left:3px solid var(--cat-arvr);">
+          <h3 style="font-size:1rem; margin-bottom:4px;">AR / VR</h3>
+          <p style="margin:0; font-size:0.85rem;">Spatial interfaces and immersive experiences — for people who think in 3D.</p>
+        </div>
+
+        <div class="panel reveal" style="--d:3; padding:18px; border-left:3px solid var(--cat-fullstack);">
+          <h3 style="font-size:1rem; margin-bottom:4px;">Full-Stack Web Development</h3>
+          <p style="margin:0; font-size:0.85rem;">End-to-end products, from database to interface — for people who like to ship things others use.</p>
+        </div>
+
+        <div class="panel reveal" style="--d:4; padding:18px; border-left:3px solid var(--cat-ml);">
+          <h3 style="font-size:1rem; margin-bottom:4px;">Machine Learning</h3>
+          <p style="margin:0; font-size:0.85rem;">Patterns, data, and prediction — for people who like asking "what does this actually mean?"</p>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">Learning Journey Plan · BSE Specialisation Advisor · Built for incoming students</div>
+</footer>
+
+<script src="js/preloader.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/validation.js"></script>
+<script src="js/landing.js"></script>
+</body>
+</html>

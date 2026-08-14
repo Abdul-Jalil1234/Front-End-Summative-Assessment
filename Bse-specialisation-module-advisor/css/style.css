@@ -1,0 +1,885 @@
+/* ==========================================================================
+   LEARNING JOURNEY PLAN — BSE SPECIALISATION ADVISOR
+   Design language: "Engineering Blueprint"
+   Rationale: the app is literally plotting a student's route through four
+   engineering specialisations, so the visual system borrows from technical
+   drafting — blueprint-grid backgrounds, corner brackets like schematic
+   callouts, dashed "route" connectors, and a compass/radar instrument as
+   the results-page signature element.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. DESIGN TOKENS
+   -------------------------------------------------------------------------- */
+:root {
+  /* -- Colour: blueprint navy surface + four specialisation accent hues -- */
+  --ink-900: #0b1220;      /* page background (deep blueprint navy)      */
+  --ink-800: #111b30;      /* card / panel surface                       */
+  --ink-700: #1a2740;      /* raised surface / input background          */
+  --line-blue: #2c4a75;    /* grid + hairline colour                     */
+  --paper: #eef3fb;        /* primary text on dark                       */
+  --paper-dim: #a9b8d4;    /* secondary text on dark                     */
+
+  --route-amber: #e8a04c;  /* primary accent / active route line         */
+  --cat-lowlevel: #e8a04c; /* Low-Level Programming                      */
+  --cat-arvr: #9d7bf0;     /* AR / VR                                    */
+  --cat-fullstack: #35c9b0;/* Full-Stack Web Development                 */
+  --cat-ml: #ef6f8e;       /* Machine Learning                           */
+
+  --ok: #3ed598;
+  --err: #ef5c6e;
+
+  /* -- Type: technical display + neutral body + monospace for data -- */
+  --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
+  --font-body: 'Inter', 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  /* -- Layout -- */
+  --radius: 4px;
+  --radius-lg: 10px;
+  --max-w: 1100px;
+  --shadow-panel: 0 20px 60px -20px rgba(0,0,0,0.6);
+}
+
+/* Light theme — same structure, inverted surfaces. Toggled via
+   documentElement[data-theme="light"], set by js/theme.js. Category
+   accent colours stay identical in both themes so results stay legible
+   and consistent regardless of mode. */
+:root[data-theme="light"] {
+  --ink-900: #f3f6fc;
+  --ink-800: #ffffff;
+  --ink-700: #eaf0fa;
+  --line-blue: #c9d7ee;
+  --paper: #101728;
+  --paper-dim: #4b5a78;
+  --shadow-panel: 0 20px 60px -20px rgba(16, 23, 40, 0.18);
+}
+:root[data-theme="light"] body {
+  background-image:
+    linear-gradient(var(--line-blue) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line-blue) 1px, transparent 1px);
+}
+:root[data-theme="light"] .site-nav { background: rgba(243, 246, 252, 0.85); }
+:root[data-theme="light"] #preloader { background: var(--ink-900); }
+
+/* --------------------------------------------------------------------------
+   2. RESET & BASE
+   -------------------------------------------------------------------------- */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background-color: var(--ink-900);
+  color: var(--paper);
+  line-height: 1.55;
+  /* Blueprint grid: two overlaid linear-gradients act as graph paper */
+  background-image:
+    linear-gradient(var(--line-blue) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line-blue) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-attachment: fixed;
+  background-position: center;
+  min-height: 100vh;
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+}
+
+/* The score bars are a mild, purely-cosmetic width change — not the kind
+   of motion (parallax, spinning, autoplay) reduced-motion settings exist
+   to protect against — so they get a short, deliberate exemption from
+   the blanket rule above instead of vanishing to 0.001ms. A class
+   selector always wins over the universal `*` selector at equal
+   !important weight, regardless of source order, so this reliably
+   overrides the rule directly above it. */
+@media (prefers-reduced-motion: reduce) {
+  .score-bar-fill.fill-in { animation-duration: 0.5s !important; }
+}
+
+h1, h2, h3, h4 { font-family: var(--font-display); margin: 0 0 0.5em; letter-spacing: -0.01em; }
+p { margin: 0 0 1em; color: var(--paper-dim); }
+a { color: var(--route-amber); }
+small, .mono { font-family: var(--font-mono); }
+
+.container {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Visible keyboard focus everywhere — accessibility floor */
+a:focus-visible, button:focus-visible, input:focus-visible,
+textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--route-amber);
+  outline-offset: 3px;
+}
+
+/* --------------------------------------------------------------------------
+   3. NAVBAR
+   -------------------------------------------------------------------------- */
+.site-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(11, 18, 32, 0.85);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line-blue);
+}
+.site-nav .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--paper);
+  text-decoration: none;
+}
+.brand .brand-mark {
+  width: 26px; height: 26px;
+  border: 1.5px solid var(--route-amber);
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+}
+.brand .brand-mark::before,
+.brand .brand-mark::after {
+  content: "";
+  position: absolute;
+  background: var(--route-amber);
+}
+.brand .brand-mark::before { top: 50%; left: 10%; right: 10%; height: 1.5px; transform: translateY(-50%) rotate(45deg); }
+.brand .brand-mark::after { top: 10%; bottom: 10%; left: 50%; width: 1.5px; transform: translateX(-50%) rotate(45deg); }
+
+.nav-links { display: flex; gap: 28px; list-style: none; margin: 0; padding: 0; }
+.nav-links a {
+  color: var(--paper-dim);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 6px 2px;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.nav-links a:hover, .nav-links a.active { color: var(--paper); border-color: var(--route-amber); }
+
+/* --------------------------------------------------------------------------
+   4. HERO / PAGE HEADER
+   -------------------------------------------------------------------------- */
+.page-header {
+  padding: 64px 0 40px;
+  border-bottom: 1px dashed var(--line-blue);
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--route-amber);
+  margin-bottom: 14px;
+}
+.eyebrow::before { content: ""; width: 22px; height: 1px; background: var(--route-amber); }
+
+.page-header h1 { font-size: clamp(2rem, 4vw, 2.9rem); max-width: 720px; }
+.page-header .lede { max-width: 620px; font-size: 1.05rem; }
+
+/* --------------------------------------------------------------------------
+   5. PANELS / CARDS
+   -------------------------------------------------------------------------- */
+.panel {
+  background: var(--ink-800);
+  border: 1px solid var(--line-blue);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  position: relative;
+}
+/* Corner-bracket motif — reads as a schematic callout, echoes the blueprint idea */
+.panel.bracketed::before, .panel.bracketed::after {
+  content: "";
+  position: absolute;
+  width: 14px; height: 14px;
+  border-top: 2px solid var(--route-amber);
+  border-left: 2px solid var(--route-amber);
+  top: -1px; left: -1px;
+}
+.panel.bracketed::after {
+  top: auto; left: auto; bottom: -1px; right: -1px;
+  border-top: none; border-left: none;
+  border-bottom: 2px solid var(--route-amber);
+  border-right: 2px solid var(--route-amber);
+}
+
+.grid-2 { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+
+@media (max-width: 860px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) {
+  .grid-4 { grid-template-columns: 1fr; }
+}
+
+/* --------------------------------------------------------------------------
+   6. FORMS + INLINE VALIDATION
+   -------------------------------------------------------------------------- */
+.field { margin-bottom: 20px; }
+.field label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--paper-dim);
+}
+.field .hint { font-size: 0.75rem; color: var(--paper-dim); opacity: 0.7; margin-top: 4px; }
+
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+  background: var(--ink-700);
+  border: 1.5px solid var(--line-blue);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+.field textarea { resize: vertical; min-height: 110px; }
+.field input::placeholder, .field textarea::placeholder { color: #5b6b8c; }
+
+.field input:focus, .field textarea:focus {
+  border-color: var(--route-amber);
+  box-shadow: 0 0 0 3px rgba(232, 160, 76, 0.15);
+}
+
+/* State toggling classes — applied by JS on input/blur */
+.field.is-valid input,
+.field.is-valid textarea { border-color: var(--ok); background-color: rgba(62, 213, 152, 0.06); }
+
+.field.is-invalid input,
+.field.is-invalid textarea { border-color: var(--err); background-color: rgba(239, 92, 110, 0.06); }
+
+/* Inline error / success message region (never uses alert()) */
+.error-message {
+  display: block;
+  min-height: 1.1em;
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--err);
+  font-family: var(--font-mono);
+}
+.field.is-valid .error-message { color: var(--ok); }
+.field.is-valid .error-message::before { content: "✓ "; }
+.field.is-invalid .error-message::before { content: "✕ "; }
+
+/* --------------------------------------------------------------------------
+   7. BUTTONS
+   -------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.92rem;
+  padding: 13px 26px;
+  border-radius: var(--radius);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--route-amber); color: #1a1206; }
+.btn-primary:hover { box-shadow: 0 8px 24px -6px rgba(232, 160, 76, 0.55); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--paper); border-color: var(--line-blue); }
+.btn-ghost:hover { border-color: var(--paper-dim); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* --------------------------------------------------------------------------
+   8. QUIZ PAGE
+   -------------------------------------------------------------------------- */
+.quiz-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+/* Custom progress indicator — dashed "route" of dots, not a stock <progress> bar */
+.route-progress { display: flex; align-items: center; gap: 6px; }
+.route-progress .stop {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--ink-700);
+  border: 1.5px solid var(--line-blue);
+  transition: background-color 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+}
+.route-progress .stop.done { background: var(--route-amber); border-color: var(--route-amber); }
+.route-progress .stop.current { border-color: var(--route-amber); transform: scale(1.4); }
+
+/* Live timer display */
+.timer-badge {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--line-blue);
+  background: var(--ink-800);
+  color: var(--paper);
+  min-width: 84px;
+  text-align: center;
+}
+.timer-badge.warning {
+  color: var(--err);
+  border-color: var(--err);
+  animation: pulse-warn 1s ease-in-out infinite;
+}
+@keyframes pulse-warn {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 92, 110, 0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(239, 92, 110, 0); }
+}
+
+.quiz-locked { opacity: 0.5; pointer-events: none; filter: grayscale(0.4); }
+
+.question-card {
+  animation: card-in 0.35s ease both;
+}
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.question-card .q-index {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--route-amber);
+  margin-bottom: 10px;
+  letter-spacing: 0.08em;
+}
+.question-card h2 { font-size: 1.4rem; margin-bottom: 22px; }
+
+.option-list { display: grid; gap: 12px; }
+.option-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  background: var(--ink-700);
+  border: 1.5px solid var(--line-blue);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+}
+.option-card:hover { border-color: var(--route-amber); transform: translateX(2px); }
+.option-card.selected { border-color: var(--route-amber); background: rgba(232, 160, 76, 0.1); }
+.option-card .opt-key {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--paper-dim);
+  border: 1px solid var(--line-blue);
+  border-radius: 3px;
+  width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.option-card.selected .opt-key { color: var(--route-amber); border-color: var(--route-amber); }
+
+.quiz-actions { display: flex; justify-content: space-between; margin-top: 26px; }
+
+/* Image hotspot question */
+.hotspot-wrap { position: relative; border: 1px dashed var(--line-blue); border-radius: var(--radius); overflow: hidden; }
+.hotspot-wrap svg { display: block; width: 100%; height: auto; }
+.hotspot-zone { cursor: pointer; transition: opacity 0.2s ease; opacity: 0.001; }
+.hotspot-zone:hover { opacity: 0.18; fill: var(--route-amber); }
+.hotspot-zone.selected { opacity: 0.28; fill: var(--route-amber); }
+.hotspot-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--paper-dim);
+  pointer-events: none;
+}
+
+/* Audio question */
+.audio-panel { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.audio-controls { display: flex; gap: 10px; }
+.audio-btn {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line-blue);
+  background: var(--ink-700);
+  color: var(--paper);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.audio-btn:hover { border-color: var(--route-amber); }
+.audio-progress-track {
+  flex: 1;
+  min-width: 140px;
+  height: 4px;
+  background: var(--ink-700);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.audio-progress-fill { height: 100%; width: 0%; background: var(--route-amber); transition: width 0.1s linear; }
+
+/* --------------------------------------------------------------------------
+   9. RESULTS PAGE
+   -------------------------------------------------------------------------- */
+.results-hero { display: grid; grid-template-columns: 1fr; gap: 10px; text-align: center; margin-bottom: 34px; }
+.results-hero .cat-name { font-size: clamp(2rem, 5vw, 3.2rem); }
+
+.canvas-wrap {
+  background: var(--ink-800);
+  border: 1px solid var(--line-blue);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+#resultsCanvas { max-width: 100%; }
+
+.score-breakdown { display: grid; gap: 14px; margin-top: 24px; }
+.score-row { display: grid; grid-template-columns: 160px 1fr 50px; align-items: center; gap: 12px; }
+.score-row .cat-label { font-size: 0.85rem; font-weight: 600; }
+.score-bar-track { height: 10px; background:var(--ink-700); border-radius: 5px; overflow: hidden;  }
+.score-bar-fill { height: 100%; width: 0%; border-radius: 5px; background: var(--route-amber); transition: width 0.5s cubic-bezier(.2, .8, .2, 1); }
+/* Applied by JS once the row's target width is known — a @keyframes
+   animation, not a transition, so it doesn't depend on the browser
+   having already painted the width:0% starting state first (see the
+   comment in results.js next to where this class gets added). */
+.score-bar-fill.fill-in {
+  animation: bar-fill-grow 1s cubic-bezier(.2, .8, .2, 1) forwards;
+}
+@keyframes bar-fill-grow {
+  from { width: 0%; }
+  to   { width: var(--target-w ); }
+}
+.score-row .score-val { font-family: var(--font-mono); font-size: 0.85rem; text-align: right; color: var(--paper-dim); }
+
+.next-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.next-steps li {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 14px;
+  background: var(--ink-700);
+  border-radius: var(--radius);
+  border: 1px solid var(--line-blue);
+  font-size: 0.9rem;
+  color: var(--paper);
+}
+.next-steps li .n { font-family: var(--font-mono); color: var(--route-amber); }
+
+/* --------------------------------------------------------------------------
+   10. CONTACT PAGE
+   -------------------------------------------------------------------------- */
+.author-card { display: flex; gap: 16px; align-items: center; margin-bottom: 24px; }
+.author-avatar img {
+  width: 54px; height: 54px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--cat-lowlevel), var(--cat-arvr));
+  flex-shrink: 0;
+}
+.form-status {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+  display: none;
+}
+.form-status.show { display: block; animation: card-in 0.3s ease both; }
+.form-status.success { background: rgba(62, 213, 152, 0.1); border: 1px solid var(--ok); color: var(--ok); }
+.form-status.error { background: rgba(239, 92, 110, 0.1); border: 1px solid var(--err); color: var(--err); }
+
+/* --------------------------------------------------------------------------
+   11. FOOTER
+   -------------------------------------------------------------------------- */
+.site-footer {
+  border-top: 1px dashed var(--line-blue);
+  padding: 32px 0;
+  margin-top: 60px;
+  color: var(--paper-dim);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   12. PRELOADER
+   Full-screen splash shown while fonts/assets settle. A compass needle
+   sweeps and settles, echoing the "route/compass" motif used throughout.
+   -------------------------------------------------------------------------- */
+#preloader {
+  position: fixed; inset: 0; z-index: 999;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px;
+  background: var(--ink-900);
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+#preloader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+.preloader-compass {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  border: 2px solid var(--line-blue);
+  position: relative;
+}
+.preloader-compass::before {
+  content: "";
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 2px; height: 26px;
+  background: linear-gradient(var(--route-amber), transparent);
+  transform-origin: bottom center;
+  transform: translate(-50%, -100%);
+  animation: compass-spin 1.1s cubic-bezier(.5,0,.5,1) infinite;
+}
+.preloader-compass::after {
+  content: "";
+  position: absolute; top: 50%; left: 50%;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--route-amber);
+  transform: translate(-50%, -50%);
+}
+@keyframes compass-spin {
+  0%   { transform: translate(-50%, -100%) rotate(0deg); }
+  50%  { transform: translate(-50%, -100%) rotate(200deg); }
+  100% { transform: translate(-50%, -100%) rotate(360deg); }
+}
+.preloader-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+}
+.preloader-label::after {
+  content: "";
+  display: inline-block;
+  width: 1ch;
+  animation: dots-cycle 1.2s steps(4) infinite;
+}
+@keyframes dots-cycle {
+  0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; }
+}
+
+/* --------------------------------------------------------------------------
+   13. HAMBURGER / MOBILE NAV
+   Hamburger button is only ever visible below 768px; the desktop nav-links
+   row is hidden below that breakpoint and replaced with a slide-down panel.
+   -------------------------------------------------------------------------- */
+.nav-toggle {
+  display: none;
+  width: 40px; height: 40px;
+  background: transparent;
+  border: 1px solid var(--line-blue);
+  border-radius: var(--radius);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+.nav-toggle .bar {
+  position: absolute; left: 9px; right: 9px; height: 2px;
+  background: var(--paper);
+  transition: transform 0.28s ease, opacity 0.2s ease, top 0.28s ease;
+}
+.nav-toggle .bar:nth-child(1) { top: 13px; }
+.nav-toggle .bar:nth-child(2) { top: 19px; }
+.nav-toggle .bar:nth-child(3) { top: 25px; }
+.nav-toggle[aria-expanded="true"] .bar:nth-child(1) { top: 19px; transform: rotate(45deg); }
+.nav-toggle[aria-expanded="true"] .bar:nth-child(2) { opacity: 0; }
+.nav-toggle[aria-expanded="true"] .bar:nth-child(3) { top: 19px; transform: rotate(-45deg); }
+
+@media (max-width: 768px) {
+  .nav-toggle { display: block; }
+  .nav-links {
+    position: fixed;
+    top: 64px; left: 0; right: 0;
+    flex-direction: column;
+    gap: 0;
+    background: var(--ink-800);
+    border-bottom: 1px solid var(--line-blue);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.32s ease;
+  }
+  .nav-links.open { max-height: 260px; }
+  .nav-links li { width: 100%; }
+  .nav-links a {
+    display: block;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--line-blue);
+    border-left: 2px solid transparent;
+  }
+  .nav-links a.active, .nav-links a:hover { border-left-color: var(--route-amber); border-bottom-color: var(--line-blue); }
+}
+
+/* --------------------------------------------------------------------------
+   14. SCROLL-REVEAL + COUNTERS
+   -------------------------------------------------------------------------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal.in-view { opacity: 1; transform: none; }
+
+/* Staggered children — set --d (delay index) inline per element */
+.reveal[style*="--d"] { transition-delay: calc(var(--d) * 90ms); }
+
+/* --------------------------------------------------------------------------
+   15. MARQUEE (results page — "recent completions" ticker)
+   -------------------------------------------------------------------------- */
+.marquee-wrap {
+  border-top: 1px solid var(--line-blue);
+  border-bottom: 1px solid var(--line-blue);
+  background: var(--ink-800);
+  overflow: hidden;
+  position: relative;
+  padding: 10px 0;
+  margin: 0 0 36px;
+}
+.marquee-wrap::before, .marquee-wrap::after {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 60px; z-index: 2; pointer-events: none;
+}
+.marquee-wrap::before { left: 0; background: linear-gradient(90deg, var(--ink-800), transparent); }
+.marquee-wrap::after { right: 0; background: linear-gradient(-90deg, var(--ink-800), transparent); }
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 40px;
+  animation: marquee-scroll 28s linear infinite;
+}
+.marquee-wrap:hover .marquee-track { animation-play-state: paused; }
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-item {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--paper-dim);
+  white-space: nowrap;
+}
+.marquee-item .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+/* --------------------------------------------------------------------------
+   16. CONFETTI CANVAS (results page celebration burst)
+   -------------------------------------------------------------------------- */
+#confettiCanvas {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 40;
+}
+
+/* --------------------------------------------------------------------------
+   17. QUIZ START GATE
+   -------------------------------------------------------------------------- */
+.start-gate { text-align: center; padding: 30px 10px; }
+.start-gate .start-icon {
+  width: 60px; height: 60px; margin: 0 auto 18px;
+  border: 2px solid var(--route-amber);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  color: var(--route-amber);
+}
+.start-gate h2 { font-size: 1.5rem; margin-bottom: 10px; }
+.start-gate ul.rules {
+  list-style: none; padding: 0; margin: 20px 0 26px;
+  display: grid; gap: 8px;
+  text-align: left;
+  max-width: 380px;
+  margin-left: auto; margin-right: auto;
+}
+.start-gate ul.rules li {
+  font-size: 0.85rem; color: var(--paper-dim);
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.start-gate ul.rules li::before { content: "→"; color: var(--route-amber); flex-shrink: 0; }
+
+/* --------------------------------------------------------------------------
+   18. GO-FURTHER SECTION (results page)
+   -------------------------------------------------------------------------- */
+.go-further-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 14px 16px;
+  background: var(--ink-700);
+  border: 1px solid var(--line-blue);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--paper);
+  transition: border-color 0.18s ease, transform 0.15s ease;
+}
+.go-further-card:hover { border-color: var(--route-amber); transform: translateX(3px); }
+.go-further-card .gf-title { font-size: 0.9rem; font-weight: 600; }
+.go-further-card .gf-sub { font-size: 0.76rem; color: var(--paper-dim); font-family: var(--font-mono); }
+.go-further-card .gf-arrow { color: var(--route-amber); font-size: 1.1rem; flex-shrink: 0; }
+
+/* --------------------------------------------------------------------------
+   20. THEME TOGGLE
+   -------------------------------------------------------------------------- */
+.theme-toggle {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--line-blue);
+  background: var(--ink-800);
+  color: var(--paper);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+  transition: border-color 0.2s ease, transform 0.4s ease;
+}
+.theme-toggle:hover { border-color: var(--route-amber); transform: rotate(20deg); }
+
+/* --------------------------------------------------------------------------
+   21. VIDEO SCENARIO QUESTION
+   -------------------------------------------------------------------------- */
+.video-wrap {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--line-blue);
+  background: #000;
+}
+.video-wrap video { display: block; width: 100%; height: auto; }
+.video-pause-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+  padding-top: 15px;
+  padding: 20px;
+  background: linear-gradient(0deg, rgba(11,18,32,0.92) 0%, rgba(11,18,32,0.15) 60%, transparent 100%);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.video-pause-overlay.show { opacity: 1; pointer-events: auto; }
+.video-pause-overlay .option-list { width: 100%; max-width: 460px; }
+.video-status {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--paper-dim);
+  margin-top: 10px;
+}
+
+/* --------------------------------------------------------------------------
+   22. CHART TYPE TABS (results page)
+   -------------------------------------------------------------------------- */
+.chart-tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; }
+.chart-tab {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--line-blue);
+  background: transparent;
+  color: var(--paper-dim);
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease, background-color 0.18s ease;
+}
+.chart-tab.active { border-color: var(--route-amber); color: var(--route-amber); background: rgba(232,160,76,0.08); }
+
+/* --------------------------------------------------------------------------
+   23. AUDIO STATUS TEXT (accessible fallback / error reporting)
+   -------------------------------------------------------------------------- */
+.audio-status {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--paper-dim);
+  margin-top: -8px;
+  margin-bottom: 18px;
+}
+.audio-status.error { color: var(--err); }
+.audio-status.ready { color: var(--ok); }
+
+/* --------------------------------------------------------------------------
+   25. SCROLL PROGRESS BAR
+   A slim bar fixed to the very top of the viewport, above the navbar,
+   filling left-to-right as the student scrolls down the current page.
+   -------------------------------------------------------------------------- */
+.scroll-progress {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  z-index: 70; /* above .site-nav (50) so it's never hidden behind it */
+  background: transparent;
+  pointer-events: none;
+}
+.scroll-progress-fill {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--route-amber), var(--cat-arvr));
+  transition: width 0.12s linear;
+}
+
+/* --------------------------------------------------------------------------
+   26. GLOW CURSOR
+   A soft, lagging glow that follows the pointer. Purely decorative, so it
+   is skipped entirely on touch devices (no real cursor to follow) and
+   when the visitor has requested reduced motion — see effects.js.
+   -------------------------------------------------------------------------- */
+#cursorGlow {
+  position: fixed;
+  top: 0; left: 0;
+  width: 340px; height: 340px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(232, 160, 76, 0.22), transparent 70%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 5; /* sits above the background grid, below real UI (panels, nav) */
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  will-change: transform;
+}
+/* Screen-blend glow reads as washed-out on a light background, so the
+   light theme swaps to a gentler multiply blend at lower opacity instead
+   of just turning it off outright. */
+:root[data-theme="light"] #cursorGlow {
+  background: radial-gradient(circle, rgba(232, 160, 76, 0.16), transparent 70%);
+  mix-blend-mode: multiply;
+}
+
+/* --------------------------------------------------------------------------
+   27. MAGNETIC BUTTONS
+   JS (effects.js) moves these slightly toward the cursor on hover; this
+   just makes sure that movement eases smoothly rather than snapping.
+   -------------------------------------------------------------------------- */
+.magnetic {
+  transition: transform 0.25s cubic-bezier(.2, .9, .3, 1.3);
+}
+
+/* --------------------------------------------------------------------------
+   28. UTILITIES
+   -------------------------------------------------------------------------- */
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0; padding: 0; margin: -1px;
+}
+.mt-lg { margin-top: 32px; }
+.text-center { text-align: center; }
+
+

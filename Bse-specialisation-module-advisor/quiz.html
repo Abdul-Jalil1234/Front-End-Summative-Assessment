@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — BSE Specialisation Advisor</title>
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem('ljp_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  })();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="scroll-progress"><span class="scroll-progress-fill" id="scrollProgressFill"></span></div>
+
+<div id="preloader">
+  <div class="preloader-compass" aria-hidden="true"></div>
+  <p class="preloader-label">Plotting your route</p>
+</div>
+
+<nav class="site-nav">
+  <div class="container">
+    <a href="index.html" class="brand"><span class="brand-mark" aria-hidden="true"></span>Learning Journey Plan</a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html">Start</a></li>
+      <li><a href="quiz.html" class="active">Quiz</a></li>
+      <li><a href="results.html">Results</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀</button>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+        <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main class="container" style="padding: 40px 24px 80px; max-width: 780px;">
+
+  <div class="quiz-topbar">
+    <div class="route-progress" id="routeProgress" aria-label="Quiz progress"></div>
+    <div class="timer-badge" id="timerBadge" role="timer" aria-live="polite">05:00</div>
+  </div>
+
+  <!-- Screen-reader live region announcing state changes (locked, submitted, etc.) -->
+  <p class="visually-hidden" id="quizLiveRegion" aria-live="assertive"></p>
+
+  <section class="panel bracketed question-card" id="quizMount" aria-live="polite">
+    <!-- Question content is rendered here by js/quiz.js -->
+  </section>
+
+  <div class="quiz-actions">
+    <button class="btn btn-ghost" id="prevBtn" type="button">← Back</button>
+    <button class="btn btn-primary" id="nextBtn" type="button">Next →</button>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">Learning Journey Plan · BSE Specialisation Advisor</div>
+</footer>
+
+<audio id="quizAudio" preload="auto">
+  <source src="assets/audio/sprint_rhythm.wav" type="audio/wav">
+  <source src="assets/audio/sprint_rhythm.mp3" type="audio/mpeg">
+</audio>
+
+<script src="js/preloader.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/quiz.js"></script>
+</body>
+</html>
