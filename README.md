@@ -33,15 +33,25 @@ a short, timed, scored quiz with an animated Canvas results chart.
 ## Features you will be interacting with
 
 🚀The preloader that appears only when a page is been downloaded and dismissed there after
+
 🚀A hamburger button that only appears on smaller screens
+
 🚀A theme toggle for switching between light and dark modes
+
 🚀A glow cursor for boosting user experience
+
 🚀Magnetic buttons
+
 🚀A marquee animation for displaying recently completed allocations to various fields
+
 🚀A scroll progress bar for showing users how far the've travelled down a page
+
 🚀A confetti celebration engine that comes into action after successfully completing a quiz and been assigned to a module
+
 🚀A canvas chart that exists through out all the pages for making the pages appealing
+
 🚀A radar chart and a bar chart button for displaying the results of the quiz based on which button has been selected.
+
 🚀A contact form for reaching out to the author with a robust validation  check.
 
 
