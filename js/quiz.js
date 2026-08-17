@@ -70,10 +70,10 @@ const QUESTIONS = [
     id: 'q7', type: 'audio',
     prompt: 'Press play. Which description matches the rhythm you just heard?',
     options: [
-      { key: 'A', text: 'Precise and metronomic — I like counting exactly what happens each beat.', cat: 'LL' },
-      { key: 'B', text: 'It felt like it filled the whole room around me.', cat: 'AR' },
-      { key: 'C', text: 'Fast and iterative — reminds me of quick build-test-ship cycles.', cat: 'FS' },
-      { key: 'D', text: 'It kept adjusting itself — every beat refined the last one.', cat: 'ML' },
+      { key: 'A', text: ' Writing a custom game engine in C to understand how memory allocation and hardware optimization work under the hood.', cat: 'LL' },
+      { key: 'B', text: 'Building an interactive, 3D room planner application that lets users walk around their virtual designs using a headset.', cat: 'AR' },
+      { key: 'C', text: ' Designing a sleek, interactive personal portfolio website with smooth animations and a responsive dark mode.', cat: 'FS' },
+      { key: 'D', text: ' Training a computer vision model to automatically sort your digital photos based on who is in them.', cat: 'ML' },
     ],
   },
   {
